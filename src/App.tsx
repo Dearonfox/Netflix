@@ -6,8 +6,8 @@ import Popular from "./pages/Popular";
 import Search from "./pages/Search";
 import Wishlist from "./pages/Wishlist";
 import { STORAGE_KEYS } from "./utils/storage";
-
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+import type { ReactElement } from "react";
+function ProtectedRoute({ children }: { children: ReactElement }) {
     const isLogin = !!localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return isLogin ? children : <Navigate to="/signin" replace />;
 }
