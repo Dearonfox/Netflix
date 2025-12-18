@@ -7,7 +7,7 @@ export function getApiKey(): string {
     const fromLS = (localStorage.getItem("TMDB-Key") ?? "").trim();
     if (fromLS) return fromLS;
 
-    const fromEnv = (process.env.REACT_APP_TMDB_KEY ?? "").trim();
+    const fromEnv = (process.env.REACT_APP_TMDB_API_KEY ?? "").trim();
     if (fromEnv) return fromEnv;
 
     throw new Error("TMDB 키가 없습니다. (localStorage TMDb-Key 또는 .env REACT_APP_TMDB_KEY)");
