@@ -4,7 +4,7 @@ const BASE_URL = "https://api.themoviedb.org/3";
 const IMG_BASE = "https://image.tmdb.org/t/p";
 
 export function getApiKey(): string {
-    const fromLS = (localStorage.getItem("TMDb-Key") ?? "").trim();
+    const fromLS = (localStorage.getItem("TMDB-Key") ?? "").trim();
     if (fromLS) return fromLS;
 
     const fromEnv = (process.env.REACT_APP_TMDB_KEY ?? "").trim();
