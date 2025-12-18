@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import "../styles/auth.css"; // 아래에서 만들거임
+import "../styles/auth.css";
 import { STORAGE_KEYS, readJSON, writeJSON, type User } from "../utils/storage";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Signin() {
     const nav = useNavigate();
+
     const [mode, setMode] = useState<"signin" | "signup">("signin");
 
     const [id, setId] = useState("");
@@ -28,8 +28,10 @@ export default function Signin() {
 
         writeJSON(STORAGE_KEYS.USERS, [...users, { id, pw }]);
         alert("회원가입 완료! 로그인 해주세요.");
+
         setMode("signin");
         setPw2("");
+        setAgree(false);
     };
 
     const signin = () => {
@@ -40,96 +42,176 @@ export default function Signin() {
         const ok = users.find((u) => u.id === id && u.pw === pw);
         if (!ok) return alert("로그인 실패: 계정 정보가 없습니다.");
 
-        // ✅ 과제 요건: localStorage 저장(3개 이상)
+        // 과제 요건: localStorage 최소 3개 이상
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, id);
-        localStorage.setItem(STORAGE_KEYS.TMDB_KEY, pw); // 비번=TMDB Key로 사용
+        localStorage.setItem(STORAGE_KEYS.TMDB_KEY, pw); // 비번=TMDB Key
         localStorage.setItem(STORAGE_KEYS.KEEP_LOGIN, remember ? "1" : "0");
 
         nav("/");
     };
 
+    const isSignin = mode === "signin";
+
     return (
-        <div className="auth-bg">
-            <div className="auth-vignette" />
+        <div className="auth2-bg">
+            <div className="auth2-vignette" />
 
-            <div className="auth-wrap">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={mode}
-                        className="auth-card"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -12 }}
-                        transition={{ duration: 0.22 }}
-                    >
-                        <h2 className="auth-title">{mode === "signin" ? "Sign in" : "Sign up"}</h2>
+            <div className="auth2-wrapper">
+                <div className="auth2-card">
+                    {/* 상단 제목(슬라이드) */}
+                    <div className="auth2-titleArea">
+                        <div className={`auth2-titleTrack ${isSignin ? "is-signin" : "is-signup"}`}>
+                            <div className="auth2-title">Login Form</div>
+                            <div className="auth2-title">Signup Form</div>
+                        </div>
+                    </div>
 
-                        <input
-                            className="auth-input"
-                            placeholder="Username or Email"
-                            value={id}
-                            onChange={(e) => setId(e.target.value)}
-                        />
+                    {/* 탭(슬라이드 바) */}
+                    <div className="auth2-tabs">
+                        <button
+                            type="button"
+                            className={`auth2-tab ${isSignin ? "active" : ""}`}
+                            onClick={() => setMode("signin")}
+                        >
+                            Login
+                        </button>
+                        <button
+                            type="button"
+                            className={`auth2-tab ${!isSignin ? "active" : ""}`}
+                            onClick={() => setMode("signup")}
+                        >
+                            Signup
+                        </button>
+                        <div className={`auth2-tabIndicator ${isSignin ? "left" : "right"}`} />
+                    </div>
 
-                        <input
-                            className="auth-input"
-                            placeholder="Password"
-                            type="password"
-                            value={pw}
-                            onChange={(e) => setPw(e.target.value)}
-                        />
+                    {/* 폼(슬라이드 전환 핵심) */}
+                    <div className="auth2-formViewport">
+                        <div className={`auth2-formTrack ${isSignin ? "is-signin" : "is-signup"}`}>
+                            {/* LOGIN */}
+                            <form
+                                className="auth2-form"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    signin();
+                                }}
+                            >
+                                <div className="auth2-field">
+                                    <input
+                                        placeholder="Email Address"
+                                        value={id}
+                                        onChange={(e) => setId(e.target.value)}
+                                    />
+                                </div>
 
-                        {mode === "signup" && (
-                            <input
-                                className="auth-input"
-                                placeholder="Confirm Password"
-                                type="password"
-                                value={pw2}
-                                onChange={(e) => setPw2(e.target.value)}
-                            />
-                        )}
+                                <div className="auth2-field">
+                                    <input
+                                        placeholder="Password"
+                                        type="password"
+                                        value={pw}
+                                        onChange={(e) => setPw(e.target.value)}
+                                    />
+                                </div>
 
-                        {mode === "signin" ? (
-                            <div className="auth-row">
-                                <label className="auth-check">
+                                <div className="auth2-row">
+                                    <label className="auth2-check">
+                                        <input
+                                            type="checkbox"
+                                            checked={remember}
+                                            onChange={(e) => setRemember(e.target.checked)}
+                                        />
+                                        <span>Remember me</span>
+                                    </label>
+
+                                    <button
+                                        className="auth2-link"
+                                        type="button"
+                                        onClick={() => alert("구현 안 함")}
+                                    >
+                                        Forgot password?
+                                    </button>
+                                </div>
+
+                                <button className="auth2-submit" type="submit">
+                                    Login
+                                </button>
+
+                                <div className="auth2-bottomText">
+                                    Not a member?{" "}
+                                    <button
+                                        type="button"
+                                        className="auth2-inline"
+                                        onClick={() => setMode("signup")}
+                                    >
+                                        Signup now
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* SIGNUP */}
+                            <form
+                                className="auth2-form"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    signup();
+                                }}
+                            >
+                                <div className="auth2-field">
+                                    <input
+                                        placeholder="Email Address"
+                                        value={id}
+                                        onChange={(e) => setId(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="auth2-field">
+                                    <input
+                                        placeholder="Password"
+                                        type="password"
+                                        value={pw}
+                                        onChange={(e) => setPw(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="auth2-field">
+                                    <input
+                                        placeholder="Confirm password"
+                                        type="password"
+                                        value={pw2}
+                                        onChange={(e) => setPw2(e.target.value)}
+                                    />
+                                </div>
+
+                                <label className="auth2-check auth2-agree">
                                     <input
                                         type="checkbox"
-                                        checked={remember}
-                                        onChange={(e) => setRemember(e.target.checked)}
+                                        checked={agree}
+                                        onChange={(e) => setAgree(e.target.checked)}
                                     />
-                                    <span>Remember me</span>
+                                    <span>I agree to Terms & Conditions</span>
                                 </label>
 
-                                <button className="auth-link" type="button" onClick={() => alert("구현 안 함")}>
-                                    Forgot Password?
+                                <button className="auth2-submit" type="submit">
+                                    Signup
                                 </button>
-                            </div>
-                        ) : (
-                            <label className="auth-check auth-agree">
-                                <input
-                                    type="checkbox"
-                                    checked={agree}
-                                    onChange={(e) => setAgree(e.target.checked)}
-                                />
-                                <span>I agree to Terms & Conditions</span>
-                            </label>
-                        )}
 
-                        <button className="auth-btn" onClick={mode === "signin" ? signin : signup}>
-                            {mode === "signin" ? "LOGIN" : "SIGN UP"}
-                        </button>
+                                <div className="auth2-bottomText">
+                                    Already have an account?{" "}
+                                    <button
+                                        type="button"
+                                        className="auth2-inline"
+                                        onClick={() => setMode("signin")}
+                                    >
+                                        Login
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
-                        <button
-                            className="auth-bottom"
-                            type="button"
-                            onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
-                        >
-                            {mode === "signin"
-                                ? "Don't have an account?  Sign up"
-                                : "Already have an account?  Sign in"}
-                        </button>
-                    </motion.div>
-                </AnimatePresence>
+                {/* 아래 바닥 패널(너 예시처럼) */}
+                <div className="auth2-floor" />
             </div>
         </div>
     );
