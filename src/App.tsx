@@ -6,8 +6,9 @@ import Popular from "./pages/Popular";
 import Search from "./pages/Search";
 import Wishlist from "./pages/Wishlist";
 import { STORAGE_KEYS } from "./utils/storage";
+import type { ReactElement } from "react";
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactElement }) {
     const isLogin = !!localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return isLogin ? children : <Navigate to="/signin" replace />;
 }
@@ -15,8 +16,10 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 export default function App() {
     return (
         <Routes>
+            {/* ✅ 로그인 페이지는 가드 밖 */}
             <Route path="/signin" element={<Signin />} />
 
+            {/* ✅ 나머지는 가드 안 */}
             <Route
                 path="/"
                 element={
@@ -31,6 +34,7 @@ export default function App() {
                 <Route path="wishlist" element={<Wishlist />} />
             </Route>
 
+            {/* 나머지 경로는 홈으로 */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
