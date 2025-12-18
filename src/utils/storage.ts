@@ -3,7 +3,7 @@ export const STORAGE_KEYS = {
     CURRENT_USER: "currentUser",
     TMDB_KEY: "TMDB-Key",
     KEEP_LOGIN: "keepLogin",
-    WISHLIST: "movieWishlist",
+    WISHLIST: "Wishlist",
 } as const;
 
 export type User = { id: string; pw: string };
