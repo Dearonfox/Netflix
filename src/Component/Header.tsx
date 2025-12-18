@@ -1,6 +1,31 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { STORAGE_KEYS } from "../utils/storage";
+
+function useMediaQuery(query: string) {
+    const [matches, setMatches] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return window.matchMedia(query).matches;
+    });
+
+    useEffect(() => {
+        const m = window.matchMedia(query);
+        const onChange = () => setMatches(m.matches);
+
+        // 구형/신형 브라우저 대응
+        if (m.addEventListener) m.addEventListener("change", onChange);
+        else m.addListener(onChange);
+
+        setMatches(m.matches);
+
+        return () => {
+            if (m.removeEventListener) m.removeEventListener("change", onChange);
+            else m.removeListener(onChange);
+        };
+    }, [query]);
+
+    return matches;
+}
 
 const linkStyle = ({ isActive }: { isActive: boolean }) => ({
     color: isActive ? "white" : "#cfcfcf",
@@ -13,13 +38,27 @@ const linkStyle = ({ isActive }: { isActive: boolean }) => ({
 
 export default function Header() {
     const nav = useNavigate();
+
+    const isMobile = useMediaQuery("(max-width: 600px)");
+
     const [openUser, setOpenUser] = useState(false);
     const [openNav, setOpenNav] = useState(false);
+
     const userRef = useRef<HTMLDivElement | null>(null);
     const navRef = useRef<HTMLDivElement | null>(null);
 
     const currentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER) ?? "";
     const isLogin = !!currentUser;
+
+    const menuItems = useMemo(
+        () => [
+            { to: "/", label: "홈", end: true },
+            { to: "/popular", label: "대세 콘텐츠" },
+            { to: "/search", label: "찾아보기" },
+            { to: "/wishlist", label: "내가 찜한 리스트" },
+        ],
+        []
+    );
 
     const logout = () => {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
@@ -40,6 +79,12 @@ export default function Header() {
         return () => window.removeEventListener("mousedown", onDown);
     }, []);
 
+    // 모바일/데스크탑 전환될 때 열린 메뉴 닫기
+    useEffect(() => {
+        setOpenNav(false);
+        setOpenUser(false);
+    }, [isMobile]);
+
     return (
         <header
             style={{
@@ -59,74 +104,74 @@ export default function Header() {
             <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                 <div style={{ width: 26, height: 18, border: "3px solid red", flex: "0 0 auto" }} />
 
-                {/* 데스크탑 nav */}
-                <nav className="topNav">
-                    <NavLink to="/" end style={linkStyle}>홈</NavLink>
-                    <NavLink to="/popular" style={linkStyle}>대세 콘텐츠</NavLink>
-                    <NavLink to="/search" style={linkStyle}>찾아보기</NavLink>
-                    <NavLink to="/wishlist" style={linkStyle}>내가 찜한 리스트</NavLink>
-                </nav>
+                {/* ✅ 데스크탑에서만 nav 렌더링 */}
+                {!isMobile && (
+                    <nav style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                        <NavLink to="/" end style={linkStyle}>홈</NavLink>
+                        <NavLink to="/popular" style={linkStyle}>대세 콘텐츠</NavLink>
+                        <NavLink to="/search" style={linkStyle}>찾아보기</NavLink>
+                        <NavLink to="/wishlist" style={linkStyle}>내가 찜한 리스트</NavLink>
+                    </nav>
+                )}
 
-                {/* 모바일 햄버거 */}
-                <div ref={navRef} className="mobileNavWrap" style={{ position: "relative" }}>
-                    <button
-                        type="button"
-                        className="hamburgerBtn"
-                        onClick={() => setOpenNav((v) => !v)}
-                        style={{
-                            background: "transparent",
-                            border: "1px solid #333",
-                            color: "white",
-                            padding: "6px 10px",
-                            borderRadius: 10,
-                            cursor: "pointer",
-                            fontWeight: 800,
-                        }}
-                    >
-                        ☰
-                    </button>
-
-                    {openNav && (
-                        <div
+                {/* ✅ 모바일에서만 햄버거 렌더링 */}
+                {isMobile && (
+                    <div ref={navRef} style={{ position: "relative" }}>
+                        <button
+                            type="button"
+                            onClick={() => setOpenNav((v) => !v)}
                             style={{
-                                position: "absolute",
-                                left: 0,
-                                marginTop: 10,
-                                width: 190,
-                                background: "#151515",
-                                border: "1px solid #2a2a2a",
-                                borderRadius: 12,
-                                overflow: "hidden",
-                                boxShadow: "0 12px 28px rgba(0,0,0,0.45)",
+                                background: "transparent",
+                                border: "1px solid #333",
+                                color: "white",
+                                padding: "6px 10px",
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                fontWeight: 800,
                             }}
+                            aria-label="메뉴"
                         >
-                            {[
-                                { to: "/", label: "홈", end: true },
-                                { to: "/popular", label: "대세 콘텐츠" },
-                                { to: "/search", label: "찾아보기" },
-                                { to: "/wishlist", label: "내가 찜한 리스트" },
-                            ].map((x) => (
-                                <NavLink
-                                    key={x.to}
-                                    to={x.to}
-                                    end={x.end as any}
-                                    onClick={() => setOpenNav(false)}
-                                    style={({ isActive }) => ({
-                                        display: "block",
-                                        padding: "10px 12px",
-                                        color: isActive ? "white" : "#cfcfcf",
-                                        textDecoration: "none",
-                                        fontWeight: 700,
-                                        whiteSpace: "nowrap",
-                                        wordBreak: "keep-all",
-                                    })}
-                                >
-                                    {x.label}
-                                </NavLink>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                            ☰
+                        </button>
+
+                        {openNav && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    left: 0,
+                                    marginTop: 10,
+                                    width: 190,
+                                    background: "#151515",
+                                    border: "1px solid #2a2a2a",
+                                    borderRadius: 12,
+                                    overflow: "hidden",
+                                    boxShadow: "0 12px 28px rgba(0,0,0,0.45)",
+                                    zIndex: 20,
+                                }}
+                            >
+                                {menuItems.map((x) => (
+                                    <NavLink
+                                        key={x.to}
+                                        to={x.to}
+                                        end={x.end as any}
+                                        onClick={() => setOpenNav(false)}
+                                        style={({ isActive }) => ({
+                                            display: "block",
+                                            padding: "10px 12px",
+                                            color: isActive ? "white" : "#cfcfcf",
+                                            textDecoration: "none",
+                                            fontWeight: 700,
+                                            whiteSpace: "nowrap",
+                                            wordBreak: "keep-all",
+                                        })}
+                                    >
+                                        {x.label}
+                                    </NavLink>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* right (user) - 텍스트 없이 아이콘만 */}
@@ -137,7 +182,6 @@ export default function Header() {
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
                         background: "transparent",
                         border: "1px solid #333",
                         color: "white",
@@ -145,7 +189,7 @@ export default function Header() {
                         borderRadius: 10,
                         cursor: "pointer",
                     }}
-                    aria-label={isLogin ? "프로필 메뉴(로그인됨)" : "프로필 메뉴(게스트)"}
+                    aria-label="프로필"
                 >
                     <span style={{ fontSize: 18 }}>👤</span>
                 </button>
@@ -162,6 +206,7 @@ export default function Header() {
                             borderRadius: 12,
                             overflow: "hidden",
                             boxShadow: "0 12px 28px rgba(0,0,0,0.45)",
+                            zIndex: 20,
                         }}
                     >
                         {isLogin ? (
