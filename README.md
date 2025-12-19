@@ -18,4 +18,3 @@ TMDB 데이터를 이용해 영화 목록 조회/검색/찜 기능을 구현한 
 ### Run (Local)
 ```bash
 npm install
-npm start
