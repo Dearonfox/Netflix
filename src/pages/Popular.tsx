@@ -207,9 +207,9 @@ export default function Popular() {
                                     { label: "포스터", w: 70, align: "left" as const },
                                     { label: "제목", w: "auto", align: "left" as const },
                                     { label: "언어", w: 80, align: "center" as const },
-                                    { label: "개봉", w: 120, align: "center" as const },
+                                    { label: "개봉일자", w: 120, align: "center" as const },
                                     { label: "평점", w: 90, align: "right" as const },
-                                    { label: "인기", w: 90, align: "right" as const },
+                                    { label: "인기도", w: 90, align: "right" as const },
                                 ].map((c) => (
                                     <th
                                         key={c.label}
