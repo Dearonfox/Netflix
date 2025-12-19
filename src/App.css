@@ -36,3 +36,130 @@
     transform: rotate(360deg);
   }
 }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* =========================
+   1) Header (모바일 깨짐 방지)
+========================= */
+.appHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.appNav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;          /* 공간 부족하면 줄바꿈 */
+}
+
+.appNav a {
+    white-space: nowrap;      /* ✅ 글자 단위 쪼개짐 방지 */
+    word-break: keep-all;     /* ✅ 한국어 단어 깨짐 방지 */
+}
+
+.userPill {
+    max-width: 55vw;          /* 모바일에서 너무 길면 ... */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 모바일에서 메뉴 숨기고 햄버거로 전환할 거면 */
+.menuBtn { display: none; }
+
+@media (max-width: 600px) {
+    .appNav { display: none; }    /* nav 숨김 */
+    .menuBtn { display: block; }  /* 햄버거 버튼 표시 */
+}
+
+/* =========================
+   2) 버튼 묶음(자세히/펼쳐보기) 깨짐 방지
+========================= */
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;          /* 모바일에서 자동 줄바꿈 */
+}
+
+.controls button {
+    white-space: nowrap;
+}
+
+/* =========================
+   3) Table: 모바일 대응 (A안: 가로 스크롤)
+========================= */
+.tableWrap {
+    width: 100%;
+    overflow-x: auto;                 /* ✅ 표는 모바일에서 스크롤 허용 */
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    min-width: 520px;                 /* 너무 눌리면 깨지니까 최소폭 */
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+/* 제목 칸이 너무 길 때 줄바꿈 이상하게 안되게 */
+.table .titleCell {
+    word-break: keep-all;
+}
+
+/* 포스터 사이즈(모바일에서도 너무 커지지 않게) */
+.table .posterImg {
+    width: 56px;
+    border-radius: 8px;
+}
+.topNav { display: flex; }
+.mobileNavWrap { display: none; }
+
+@media (max-width: 600px) {
+    .topNav { display: none; }
+    .mobileNavWrap { display: block; }
+}
+/* =========================
+   4) (선택) Table: 모바일에서 카드형으로 바꾸고 싶으면(B안)
+   A안 말고 B안을 쓰려면 아래 블록을 켜고,
+   위 tableWrap/min-width는 취향대로 조정
+========================= */
+/*
+@media (max-width: 600px) {
+  .table thead { display: none; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: 72px 1fr 28px;
+    gap: 12px;
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .table .posterImg { width: 72px; }
+}
+*/
