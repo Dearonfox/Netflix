@@ -54,7 +54,7 @@ export default function Header() {
         () => [
             { to: "/", label: "홈", end: true },
             { to: "/popular", label: "대세 콘텐츠" },
-            { to: "/search", label: "찾아보기" },
+            { to: "/recommendations", label: "AI 추천" },
             { to: "/wishlist", label: "내가 찜한 리스트" },
         ],
         []
@@ -63,7 +63,6 @@ export default function Header() {
     const logout = () => {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
         localStorage.removeItem(STORAGE_KEYS.KEEP_LOGIN);
-        localStorage.removeItem(STORAGE_KEYS.TMDB_KEY);
         setOpenUser(false);
         nav("/signin");
     };
@@ -109,7 +108,7 @@ export default function Header() {
                     <nav style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
                         <NavLink to="/" end style={linkStyle}>홈</NavLink>
                         <NavLink to="/popular" style={linkStyle}>대세 콘텐츠</NavLink>
-                        <NavLink to="/search" style={linkStyle}>찾아보기</NavLink>
+                        <NavLink to="/recommendations" style={linkStyle}>AI 추천</NavLink>
                         <NavLink to="/wishlist" style={linkStyle}>내가 찜한 리스트</NavLink>
                     </nav>
                 )}
@@ -174,81 +173,105 @@ export default function Header() {
                 )}
             </div>
 
-            {/* right (user) - 텍스트 없이 아이콘만 */}
-            <div ref={userRef} style={{ position: "relative", flex: "0 0 auto" }}>
+            {/* right tools */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
                 <button
                     type="button"
-                    onClick={() => setOpenUser((v) => !v)}
+                    onClick={() => nav("/search")}
                     style={{
-                        display: "flex",
-                        alignItems: "center",
+                        width: 42,
+                        height: 38,
+                        display: "grid",
+                        placeItems: "center",
                         background: "transparent",
                         border: "1px solid #333",
                         color: "white",
-                        padding: "6px 10px",
                         borderRadius: 10,
                         cursor: "pointer",
+                        fontSize: 20,
                     }}
-                    aria-label="프로필"
+                    aria-label="찾아보기"
+                    title="찾아보기"
                 >
-                    <span style={{ fontSize: 18 }}>👤</span>
+                    🔍
                 </button>
 
-                {openUser && (
-                    <div
+                <div ref={userRef} style={{ position: "relative" }}>
+                    <button
+                        type="button"
+                        onClick={() => setOpenUser((v) => !v)}
                         style={{
-                            position: "absolute",
-                            right: 0,
-                            marginTop: 10,
-                            width: 180,
-                            background: "#151515",
-                            border: "1px solid #2a2a2a",
-                            borderRadius: 12,
-                            overflow: "hidden",
-                            boxShadow: "0 12px 28px rgba(0,0,0,0.45)",
-                            zIndex: 20,
+                            width: 42,
+                            height: 38,
+                            display: "grid",
+                            placeItems: "center",
+                            background: "transparent",
+                            border: "1px solid #333",
+                            color: "white",
+                            borderRadius: 10,
+                            cursor: "pointer",
                         }}
+                        aria-label="프로필"
                     >
-                        {isLogin ? (
-                            <button
-                                type="button"
-                                onClick={logout}
-                                style={{
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "10px 12px",
-                                    background: "transparent",
-                                    border: "none",
-                                    color: "salmon",
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                로그아웃
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setOpenUser(false);
-                                    nav("/signin");
-                                }}
-                                style={{
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "10px 12px",
-                                    background: "transparent",
-                                    border: "none",
-                                    color: "white",
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                로그인
-                            </button>
-                        )}
-                    </div>
-                )}
+                        <span style={{ fontSize: 18 }}>👤</span>
+                    </button>
+
+                    {openUser && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: 0,
+                                marginTop: 10,
+                                width: 180,
+                                background: "#151515",
+                                border: "1px solid #2a2a2a",
+                                borderRadius: 12,
+                                overflow: "hidden",
+                                boxShadow: "0 12px 28px rgba(0,0,0,0.45)",
+                                zIndex: 20,
+                            }}
+                        >
+                            {isLogin ? (
+                                <button
+                                    type="button"
+                                    onClick={logout}
+                                    style={{
+                                        width: "100%",
+                                        textAlign: "left",
+                                        padding: "10px 12px",
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "salmon",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    로그아웃
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpenUser(false);
+                                        nav("/signin");
+                                    }}
+                                    style={{
+                                        width: "100%",
+                                        textAlign: "left",
+                                        padding: "10px 12px",
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "white",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    로그인
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </header>
     );

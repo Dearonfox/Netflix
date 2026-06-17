@@ -1,7 +1,6 @@
 export const STORAGE_KEYS = {
     USERS: "users",
     CURRENT_USER: "currentUser",
-    TMDB_KEY: "TMDB-Key",
     KEEP_LOGIN: "keepLogin",
     WISHLIST: "Wishlist",
 } as const;

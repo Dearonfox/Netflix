@@ -4,6 +4,7 @@ import Signin from "./pages/Signin";
 import Home from "./pages/Home";
 import Popular from "./pages/Popular";
 import Search from "./pages/Search";
+import Recommendations from "./pages/Recommendations";
 import Wishlist from "./pages/Wishlist";
 import { STORAGE_KEYS } from "./utils/storage";
 import type { ReactElement } from "react";
@@ -31,6 +32,7 @@ export default function App() {
                 <Route index element={<Home />} />
                 <Route path="popular" element={<Popular />} />
                 <Route path="search" element={<Search />} />
+                <Route path="recommendations" element={<Recommendations />} />
                 <Route path="wishlist" element={<Wishlist />} />
             </Route>
 

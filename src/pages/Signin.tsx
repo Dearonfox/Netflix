@@ -44,7 +44,6 @@ export default function Signin() {
 
         // 과제 요건: localStorage 최소 3개 이상
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, id);
-        localStorage.setItem(STORAGE_KEYS.TMDB_KEY, pw); // 비번=TMDB Key
         localStorage.setItem(STORAGE_KEYS.KEEP_LOGIN, remember ? "1" : "0");
 
         nav("/");
@@ -55,14 +54,17 @@ export default function Signin() {
     return (
         <div className="auth2-bg">
             <div className="auth2-vignette" />
+            <header className="auth2-header">
+                <div className="auth2-logo">NETFLIX</div>
+            </header>
 
             <div className="auth2-wrapper">
                 <div className="auth2-card">
                     {/* 상단 제목(슬라이드) */}
                     <div className="auth2-titleArea">
                         <div className={`auth2-titleTrack ${isSignin ? "is-signin" : "is-signup"}`}>
-                            <div className="auth2-title">Login Form</div>
-                            <div className="auth2-title">Signup Form</div>
+                            <div className="auth2-title">로그인</div>
+                            <div className="auth2-title">회원가입</div>
                         </div>
                     </div>
 
@@ -73,14 +75,14 @@ export default function Signin() {
                             className={`auth2-tab ${isSignin ? "active" : ""}`}
                             onClick={() => setMode("signin")}
                         >
-                            Login
+                            로그인
                         </button>
                         <button
                             type="button"
                             className={`auth2-tab ${!isSignin ? "active" : ""}`}
                             onClick={() => setMode("signup")}
                         >
-                            Signup
+                            회원가입
                         </button>
                         <div className={`auth2-tabIndicator ${isSignin ? "left" : "right"}`} />
                     </div>
@@ -98,7 +100,7 @@ export default function Signin() {
                             >
                                 <div className="auth2-field">
                                     <input
-                                        placeholder="Email Address"
+                                        placeholder="이메일 주소"
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
                                     />
@@ -106,7 +108,7 @@ export default function Signin() {
 
                                 <div className="auth2-field">
                                     <input
-                                        placeholder="Password"
+                                        placeholder="비밀번호"
                                         type="password"
                                         value={pw}
                                         onChange={(e) => setPw(e.target.value)}
@@ -120,7 +122,7 @@ export default function Signin() {
                                             checked={remember}
                                             onChange={(e) => setRemember(e.target.checked)}
                                         />
-                                        <span>Remember me</span>
+                                        <span>로그인 정보 저장</span>
                                     </label>
 
                                     <button
@@ -128,22 +130,22 @@ export default function Signin() {
                                         type="button"
                                         onClick={() => alert("구현 안 함")}
                                     >
-                                        Forgot password?
+                                        비밀번호를 잊으셨나요?
                                     </button>
                                 </div>
 
                                 <button className="auth2-submit" type="submit">
-                                    Login
+                                    로그인
                                 </button>
 
                                 <div className="auth2-bottomText">
-                                    Not a member?{" "}
+                                    Netflix가 처음이신가요?{" "}
                                     <button
                                         type="button"
                                         className="auth2-inline"
                                         onClick={() => setMode("signup")}
                                     >
-                                        Signup now
+                                        지금 가입하세요.
                                     </button>
                                 </div>
                             </form>
@@ -158,7 +160,7 @@ export default function Signin() {
                             >
                                 <div className="auth2-field">
                                     <input
-                                        placeholder="Email Address"
+                                        placeholder="이메일 주소"
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
                                     />
@@ -166,7 +168,7 @@ export default function Signin() {
 
                                 <div className="auth2-field">
                                     <input
-                                        placeholder="Password"
+                                        placeholder="비밀번호"
                                         type="password"
                                         value={pw}
                                         onChange={(e) => setPw(e.target.value)}
@@ -175,7 +177,7 @@ export default function Signin() {
 
                                 <div className="auth2-field">
                                     <input
-                                        placeholder="Confirm password"
+                                        placeholder="비밀번호 확인"
                                         type="password"
                                         value={pw2}
                                         onChange={(e) => setPw2(e.target.value)}
@@ -188,30 +190,27 @@ export default function Signin() {
                                         checked={agree}
                                         onChange={(e) => setAgree(e.target.checked)}
                                     />
-                                    <span>I agree to Terms & Conditions</span>
+                                    <span>서비스 이용 약관에 동의합니다.</span>
                                 </label>
 
                                 <button className="auth2-submit" type="submit">
-                                    Signup
+                                    회원가입
                                 </button>
 
                                 <div className="auth2-bottomText">
-                                    Already have an account?{" "}
+                                    이미 계정이 있으신가요?{" "}
                                     <button
                                         type="button"
                                         className="auth2-inline"
                                         onClick={() => setMode("signin")}
                                     >
-                                        Login
+                                        로그인
                                     </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
-
-                {/* 아래 바닥 패널(너 예시처럼) */}
-                <div className="auth2-floor" />
             </div>
         </div>
     );

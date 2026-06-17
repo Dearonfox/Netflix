@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { tmdb, getApiKey } from "../api/tmdb";
+import { useSearchParams } from "react-router-dom";
+import { getApiErrorMessage } from "../api/client";
+import { searchMovies } from "../api/movies";
 import { loadWishlist, toggleWish } from "../utils/wishlist";
+import type { Movie } from "../types/movie";
+import MovieDetailModal from "../Component/MovieDetailModal";
 
-type Movie = { id: number; title: string; poster_path: string | null };
-type Resp = { results: Movie[] };
-
-function posterUrl(path: string | null) {
-    return path ? `https://image.tmdb.org/t/p/w342${path}` : "";
+function posterUrl(movie: Movie) {
+    return movie.poster_url || "";
 }
 
 export default function Search() {
+    const [searchParams] = useSearchParams();
     const [q, setQ] = useState("");
     const [movies, setMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
 
     const [wishIds, setWishIds] = useState<number[]>(() =>
         loadWishlist().map((x) => x.id)
@@ -21,24 +24,19 @@ export default function Search() {
 
     const canSearch = useMemo(() => q.trim().length >= 1, [q]);
 
-    const doSearch = async () => {
-        if (!canSearch) return;
+    const doSearch = async (value = q) => {
+        const cleaned = value.trim().replace(/\s+/g, " ");
+        if (!cleaned) return;
 
         try {
             setLoading(true);
             setError("");
+            setQ(cleaned);
 
-            const key = getApiKey().trim();
-            const isV4 = key.startsWith("eyJ");
-
-            const res = await tmdb.get<Resp>("/search/movie", {
-                params: isV4 ? { query: q.trim(), page: 1 } : { api_key: key, query: q.trim(), page: 1 },
-                headers: isV4 ? { Authorization: `Bearer ${key}` } : undefined,
-            });
-
-            setMovies(res.data.results ?? []);
-        } catch (e: any) {
-            setError(e?.message ?? "검색 실패");
+            const data = await searchMovies(cleaned);
+            setMovies(data.results ?? []);
+        } catch (e) {
+            setError(getApiErrorMessage(e, "검색 실패"));
         } finally {
             setLoading(false);
         }
@@ -48,6 +46,13 @@ export default function Search() {
     useEffect(() => {
         setWishIds(loadWishlist().map((x) => x.id));
     }, []);
+
+    useEffect(() => {
+        const query = searchParams.get("query") ?? "";
+        const cleaned = query.trim().replace(/\s+/g, " ");
+        if (cleaned) doSearch(cleaned);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     return (
         <div style={{ background: "#111", minHeight: "100vh", padding: "16px 22px" }}>
@@ -72,7 +77,7 @@ export default function Search() {
                     }}
                 />
                 <button
-                    onClick={doSearch}
+                    onClick={() => doSearch()}
                     disabled={!canSearch || loading}
                     style={{
                         padding: "10px 14px",
@@ -99,19 +104,21 @@ export default function Search() {
                 }}
             >
                 {movies.map((m) => {
-                    const img = posterUrl(m.poster_path);
+                    const img = posterUrl(m);
                     const wished = wishIds.includes(m.id);
 
                     return (
                         <div
                             key={m.id}
                             style={{ cursor: "pointer", position: "relative" }}
-                            onClick={() => {
-                                const next = toggleWish({ id: m.id, title: m.title, poster_path: m.poster_path });
-                                setWishIds(next.map((x) => x.id));
-                            }}
+                            onClick={() => setSelectedMovieId(m.id)}
                         >
                             <div
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    const next = toggleWish({ id: m.id, title: m.title, poster_path: m.poster_path });
+                                    setWishIds(next.map((x) => x.id));
+                                }}
                                 style={{
                                     position: "absolute",
                                     top: 6,
@@ -140,6 +147,8 @@ export default function Search() {
             {!loading && !error && movies.length === 0 && q.trim() && (
                 <div style={{ color: "#bbb", marginTop: 14 }}>검색 결과가 없습니다.</div>
             )}
+
+            <MovieDetailModal movieId={selectedMovieId} onClose={() => setSelectedMovieId(null)} />
         </div>
     );
 }

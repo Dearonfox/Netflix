@@ -7,13 +7,9 @@ export default function Home() {
             <Banner />
 
             <div style={{ padding: "16px 22px" }}>
-                <MovieRow title="인기 영화" endpoint="/movie/popular" />
-                <MovieRow title="최신 영화" endpoint="/movie/now_playing" />
-                <MovieRow
-                    title="액션 영화"
-                    endpoint="/discover/movie"
-                    params={{ with_genres: 28, sort_by: "popularity.desc" }}
-                />
+                <MovieRow title="인기 영화" kind="popular" />
+                <MovieRow title="최신 영화" kind="now-playing" />
+                <MovieRow title="평점 높은 영화" kind="top-rated" />
             </div>
         </div>
     );

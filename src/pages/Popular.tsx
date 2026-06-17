@@ -1,25 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { tmdb, getApiKey } from "../api/tmdb";
+import { useEffect, useRef, useState } from "react";
+import { getApiErrorMessage } from "../api/client";
+import { getMovieList } from "../api/movies";
 import { loadWishlist, toggleWish } from "../utils/wishlist";
+import type { Movie } from "../types/movie";
+import MovieDetailModal from "../Component/MovieDetailModal";
 
-type Movie = {
-    id: number;
-    title: string;
-    poster_path: string | null;
-    release_date?: string;
-    vote_average?: number;
-    popularity?: number;
-    original_language?: string;
-};
-
-type Resp = {
-    results: Movie[];
-    page: number;
-    total_pages: number;
-};
-
-function posterUrl(path: string | null, size: "w185" | "w342" = "w185") {
-    return path ? `https://image.tmdb.org/t/p/${size}${path}` : "";
+function posterUrl(movie: Movie) {
+    return movie.poster_url || "";
 }
 
 type ViewMode = "table" | "infinite";
@@ -33,6 +20,7 @@ export default function Popular() {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
 
     const [wishIds, setWishIds] = useState<number[]>(() =>
         loadWishlist().map((x) => x.id)
@@ -40,39 +28,23 @@ export default function Popular() {
 
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-    const key = useMemo(() => getApiKey().trim(), []);
-    const isV4 = useMemo(() => key.startsWith("eyJ"), [key]);
-
     const fetchPage = async (p: number, append: boolean) => {
         try {
             setLoading(true);
             setError("");
 
-            const res = await tmdb.get<Resp>("/movie/popular", {
-                params: isV4 ? { page: p } : { api_key: key, page: p },
-                headers: isV4 ? { Authorization: `Bearer ${key}` } : undefined,
-            });
+            const data = await getMovieList("popular", p);
 
-            setTotalPages(res.data.total_pages ?? 1);
+            setTotalPages(data.total_pages ?? 1);
 
-            const next = res.data.results ?? [];
+            const next = data.results ?? [];
             setMovies((prev) => (append ? [...prev, ...next] : next));
-        } catch (e: any) {
-            setError(e?.message ?? "요청 실패");
+        } catch (e) {
+            setError(getApiErrorMessage(e, "요청 실패"));
         } finally {
             setLoading(false);
         }
     };
-
-    // Table 모드: 스크롤 막기 / Infinite 모드: 스크롤 허용
-    useEffect(() => {
-        if (mode === "table") document.body.style.overflow = "hidden";
-        else document.body.style.overflow = "auto";
-
-        return () => {
-            document.body.style.overflow = "auto";
-        };
-    }, [mode]);
 
     // 모드 전환 시 초기화
     useEffect(() => {
@@ -143,21 +115,35 @@ export default function Popular() {
         setWishIds(next.map((x) => x.id));
     };
 
-    // ✅ Table에서는 화면 안정적으로 보이게 10개만 표시
+    // Table 모드는 첫 화면에서 보기 좋게 Top 5만 강조합니다.
     const tableMovies = movies.slice(0, 5);
 
     return (
-        <div style={{ background: "#111", minHeight: "100vh", padding: "16px 22px" }}>
-            {/* 상단: 모드 선택 */}
-            <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
-                <h2 style={{ color: "white", margin: 0, marginRight: 10 }}>대세 콘텐츠</h2>
+        <div style={{ background: "#111", minHeight: "100vh", padding: "28px clamp(18px, 4vw, 48px)" }}>
+            <div
+                style={{
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "flex-end",
+                    marginBottom: 22,
+                    flexWrap: "wrap",
+                }}
+            >
+                <div style={{ marginRight: "auto" }}>
+                    <h1 style={{ color: "white", margin: 0, fontSize: 34, fontWeight: 900, letterSpacing: 0 }}>
+                        대세 콘텐츠
+                    </h1>
+                    <div style={{ color: "#a8a8a8", marginTop: 8, fontSize: 14 }}>
+                        지금 많이 보는 영화들을 빠르게 훑어보세요.
+                    </div>
+                </div>
 
                 <button
                     onClick={() => setMode("table")}
                     style={{
-                        padding: "8px 10px",
-                        borderRadius: 10,
-                        border: "1px solid #333",
+                        padding: "10px 14px",
+                        borderRadius: 999,
+                        border: mode === "table" ? "1px solid #e50914" : "1px solid #3a3a3a",
                         background: mode === "table" ? "#e50914" : "#151515",
                         color: "white",
                         cursor: "pointer",
@@ -170,9 +156,9 @@ export default function Popular() {
                 <button
                     onClick={() => setMode("infinite")}
                     style={{
-                        padding: "8px 10px",
-                        borderRadius: 10,
-                        border: "1px solid #333",
+                        padding: "10px 14px",
+                        borderRadius: 999,
+                        border: mode === "infinite" ? "1px solid #e50914" : "1px solid #3a3a3a",
                         background: mode === "infinite" ? "#e50914" : "#151515",
                         color: "white",
                         cursor: "pointer",
@@ -181,10 +167,6 @@ export default function Popular() {
                 >
                     펼쳐보기
                 </button>
-
-                <div style={{ marginLeft: "auto", color: "#aaa", fontSize: 12 }}>
-
-                </div>
             </div>
 
             {error && <div style={{ color: "salmon", marginBottom: 10 }}>Error: {error}</div>}
@@ -194,142 +176,190 @@ export default function Popular() {
                 <>
                     <div
                         style={{
-                            border: "1px solid #222",
-                            borderRadius: 12,
-                            overflow: "hidden",
-                            background: "#0f0f0f",
+                            display: "grid",
+                            gap: 14,
                         }}
                     >
-                        <table style={{ width: "100%", borderCollapse: "collapse", color: "white" }}>
-                            <thead>
-                            <tr>
-                                {[
-                                    { label: "포스터", w: 70, align: "left" as const },
-                                    { label: "제목", w: "auto", align: "left" as const },
-                                    { label: "언어", w: 80, align: "center" as const },
-                                    { label: "개봉일자", w: 120, align: "center" as const },
-                                    { label: "평점", w: 90, align: "right" as const },
-                                    { label: "인기도", w: 90, align: "right" as const },
-                                ].map((c) => (
-                                    <th
-                                        key={c.label}
+                        {tableMovies.map((m, index) => {
+                            const img = posterUrl(m);
+                            const wished = wishIds.includes(m.id);
+
+                            return (
+                                <div
+                                    key={m.id}
+                                    onClick={() => setSelectedMovieId(m.id)}
+                                    style={{
+                                        minHeight: 132,
+                                        display: "grid",
+                                        gridTemplateColumns: "76px 86px minmax(0, 1fr) auto",
+                                        gap: 18,
+                                        alignItems: "center",
+                                        padding: "16px 18px",
+                                        borderRadius: 10,
+                                        border: wished ? "1px solid rgba(229,9,20,0.55)" : "1px solid #252525",
+                                        background:
+                                            "linear-gradient(90deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))",
+                                        boxShadow: "0 12px 34px rgba(0,0,0,0.28)",
+                                        cursor: "pointer",
+                                        transition: "transform .16s ease, background .16s ease, border-color .16s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = "translateY(-2px)";
+                                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = "translateY(0)";
+                                        e.currentTarget.style.borderColor = wished ? "rgba(229,9,20,0.55)" : "#252525";
+                                    }}
+                                >
+                                    <div
                                         style={{
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                            background: "#141414",
-                                            color: "#ddd",
-                                            fontSize: 12,
-                                            letterSpacing: 0.4,
-                                            padding: "10px 12px",
-                                            textAlign: c.align,
-                                            width: c.w as any,
-                                            borderBottom: "1px solid #222",
+                                            color: "#333",
+                                            WebkitTextStroke: "2px #b5b5b5",
+                                            fontSize: 66,
+                                            fontWeight: 900,
+                                            lineHeight: 1,
+                                            textAlign: "center",
                                         }}
                                     >
-                                        {c.label}
-                                    </th>
-                                ))}
-                            </tr>
-                            </thead>
+                                        {index + 1}
+                                    </div>
 
-                            <tbody>
-                            {tableMovies.map((m) => {
-                                const img = posterUrl(m.poster_path, "w185");
-                                const wished = wishIds.includes(m.id);
-
-                                return (
-                                    <tr
-                                        key={m.id}
+                                    <div
                                         style={{
-                                            borderTop: "1px solid #222",
-                                            background: wished ? "rgba(229,9,20,0.08)" : "transparent",
+                                            width: 76,
+                                            height: 112,
+                                            borderRadius: 7,
+                                            overflow: "hidden",
+                                            background: "#252525",
+                                            boxShadow: "0 10px 22px rgba(0,0,0,0.45)",
                                         }}
                                     >
-                                        <td style={{ padding: "10px 12px" }}>
-                                            <div
-                                                onClick={() => toggle(m)}
-                                                style={{
-                                                    width: 46,
-                                                    height: 68,
-                                                    borderRadius: 8,
-                                                    overflow: "hidden",
-                                                    cursor: "pointer",
-                                                    transform: "scale(1)",
-                                                    transition: "transform .15s ease",
-                                                    border: wished ? "2px solid gold" : "1px solid #333",
-                                                }}
-                                                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06)")}
-                                                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                                                title={wished ? "찜 해제" : "찜 추가"}
-                                            >
-                                                {img ? (
-                                                    <img
-                                                        src={img}
-                                                        alt={m.title}
-                                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                                    />
-                                                ) : (
-                                                    <div style={{ width: "100%", height: "100%", background: "#333" }} />
-                                                )}
-                                            </div>
-                                        </td>
+                                        {img ? (
+                                            <img
+                                                src={img}
+                                                alt={m.title}
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: "100%", height: "100%" }} />
+                                        )}
+                                    </div>
 
-                                        <td
+                                    <div style={{ minWidth: 0 }}>
+                                        <div
                                             style={{
-                                                padding: "10px 12px",
-                                                fontWeight: 800,
-                                                maxWidth: 520,
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
+                                                display: "flex",
+                                                gap: 10,
+                                                alignItems: "center",
+                                                minWidth: 0,
                                             }}
                                         >
-                                            {m.title}{" "}
-                                            <span style={{ color: wished ? "gold" : "#444", fontWeight: 900 }}>
-                          {wished ? "★" : "☆"}
-                        </span>
-                                        </td>
+                                            <h3
+                                                style={{
+                                                    color: "white",
+                                                    fontSize: 23,
+                                                    lineHeight: 1.25,
+                                                    margin: 0,
+                                                    fontWeight: 900,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {m.title}
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    toggle(m);
+                                                }}
+                                                title={wished ? "찜 해제" : "찜 추가"}
+                                                style={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: "50%",
+                                                    border: wished ? "1px solid #e50914" : "1px solid #4a4a4a",
+                                                    background: wished ? "#e50914" : "rgba(0,0,0,0.25)",
+                                                    color: "white",
+                                                    cursor: "pointer",
+                                                    fontSize: 18,
+                                                    flex: "0 0 auto",
+                                                }}
+                                            >
+                                                {wished ? "★" : "＋"}
+                                            </button>
+                                        </div>
 
-                                        <td style={{ padding: "10px 12px", color: "#cfcfcf", textAlign: "center" }}>
-                                            {m.original_language ?? "-"}
-                                        </td>
-                                        <td style={{ padding: "10px 12px", color: "#cfcfcf", textAlign: "center" }}>
-                                            {m.release_date ?? "-"}
-                                        </td>
-                                        <td style={{ padding: "10px 12px", textAlign: "right", color: "#cfcfcf" }}>
-                                            {(m.vote_average ?? 0).toFixed(1)}
-                                        </td>
-                                        <td style={{ padding: "10px 12px", textAlign: "right", color: "#cfcfcf" }}>
-                                            {(m.popularity ?? 0).toFixed(0)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            </tbody>
-                        </table>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                gap: 8,
+                                                flexWrap: "wrap",
+                                                marginTop: 12,
+                                                color: "#d6d6d6",
+                                                fontSize: 14,
+                                            }}
+                                        >
+                                            <span style={{ color: "#46d369", fontWeight: 900 }}>
+                                                평점 {(m.vote_average ?? 0).toFixed(1)}
+                                            </span>
+                                            <span>{m.release_date || "개봉일 미정"}</span>
+                                            <span>{m.original_language?.toUpperCase() || "언어 정보 없음"}</span>
+                                            <span>인기도 {(m.popularity ?? 0).toFixed(0)}</span>
+                                        </div>
 
-                        {loading && <div style={{ color: "#bbb", padding: 12 }}>Loading...</div>}
+                                        <div
+                                            style={{
+                                                color: "#9f9f9f",
+                                                fontSize: 13,
+                                                marginTop: 10,
+                                            }}
+                                        >
+                                            클릭해서 상세 정보 보기
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        style={{
+                                            padding: "10px 16px",
+                                            borderRadius: 6,
+                                            border: "none",
+                                            background: "white",
+                                            color: "#111",
+                                            fontWeight: 900,
+                                            cursor: "pointer",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        ▶ 재생
+                                    </button>
+                                </div>
+                            );
+                        })}
+
+                        {loading && <div style={{ color: "#bbb", padding: 18 }}>Loading...</div>}
                     </div>
 
-                    {/* 페이지네이션 */}
                     <div
                         style={{
                             display: "flex",
                             gap: 10,
                             justifyContent: "center",
                             alignItems: "center",
-                            marginTop: 14,
+                            marginTop: 22,
                         }}
                     >
                         <button
                             disabled={page <= 1 || loading}
                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                             style={{
-                                padding: "8px 12px",
-                                borderRadius: 10,
-                                border: "1px solid #333",
-                                background: page <= 1 ? "#222" : "#151515",
+                                padding: "10px 16px",
+                                borderRadius: 999,
+                                border: "1px solid #3a3a3a",
+                                background: page <= 1 ? "#202020" : "#151515",
                                 color: "white",
                                 cursor: page <= 1 ? "not-allowed" : "pointer",
                                 fontWeight: 800,
@@ -338,7 +368,7 @@ export default function Popular() {
                             이전
                         </button>
 
-                        <div style={{ color: "white", fontWeight: 900 }}>
+                        <div style={{ color: "white", fontWeight: 900, minWidth: 96, textAlign: "center" }}>
                             {page} / {totalPages}
                         </div>
 
@@ -346,10 +376,10 @@ export default function Popular() {
                             disabled={page >= totalPages || loading}
                             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                             style={{
-                                padding: "8px 12px",
-                                borderRadius: 10,
-                                border: "1px solid #333",
-                                background: page >= totalPages ? "#222" : "#151515",
+                                padding: "10px 16px",
+                                borderRadius: 999,
+                                border: "1px solid #3a3a3a",
+                                background: page >= totalPages ? "#202020" : "#151515",
                                 color: "white",
                                 cursor: page >= totalPages ? "not-allowed" : "pointer",
                                 fontWeight: 800,
@@ -373,13 +403,13 @@ export default function Popular() {
                         }}
                     >
                         {movies.map((m) => {
-                            const img = posterUrl(m.poster_path, "w342");
+                            const img = posterUrl(m);
                             const wished = wishIds.includes(m.id);
 
                             return (
                                 <div
                                     key={m.id}
-                                    onClick={() => toggle(m)}
+                                    onClick={() => setSelectedMovieId(m.id)}
                                     style={{
                                         cursor: "pointer",
                                         position: "relative",
@@ -394,6 +424,10 @@ export default function Popular() {
                                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                                 >
                                     <div
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            toggle(m);
+                                        }}
                                         style={{
                                             position: "absolute",
                                             top: 10,
@@ -448,6 +482,8 @@ export default function Popular() {
                     )}
                 </>
             )}
+
+            <MovieDetailModal movieId={selectedMovieId} onClose={() => setSelectedMovieId(null)} />
         </div>
     );
 }

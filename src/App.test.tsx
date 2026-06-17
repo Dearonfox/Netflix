@@ -1,9 +1,17 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { readJSON, writeJSON } from "./utils/storage";
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+beforeEach(() => {
+  localStorage.clear();
+});
+
+test("stores and reads JSON values from localStorage", () => {
+  writeJSON("test-key", [{ id: "test@example.com", pw: "1234" }]);
+
+  expect(readJSON("test-key", [])).toEqual([{ id: "test@example.com", pw: "1234" }]);
+});
+
+test("returns fallback data when stored JSON is invalid", () => {
+  localStorage.setItem("broken-json", "{");
+
+  expect(readJSON("broken-json", ["fallback"])).toEqual(["fallback"]);
 });

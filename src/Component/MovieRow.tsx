@@ -1,24 +1,24 @@
 import { useEffect, useState } from "react";
-import { tmdb, getApiKey } from "../api/tmdb";
+import { getApiErrorMessage } from "../api/client";
+import { getMovieList, type MovieListKind } from "../api/movies";
 import { loadWishlist, toggleWish } from "../utils/wishlist";
+import type { Movie } from "../types/movie";
+import MovieDetailModal from "./MovieDetailModal";
 
-type Movie = { id: number; title: string; poster_path: string | null };
-type Resp = { results: Movie[] };
-
-function posterUrl(path: string | null) {
-    return path ? `https://image.tmdb.org/t/p/w342${path}` : "";
+function posterUrl(movie: Movie) {
+    return movie.poster_url || "";
 }
 
 type Props = {
     title: string;
-    endpoint: string;              // 예: "/movie/popular"
-    params?: Record<string, any>;  // 예: { with_genres: 28 }
+    kind: MovieListKind;
 };
 
-export default function MovieRow({ title, endpoint, params }: Props) {
+export default function MovieRow({ title, kind }: Props) {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
 
     // ✅ 현재 찜 상태(IDs)
     const [wishIds, setWishIds] = useState<number[]>(() =>
@@ -33,17 +33,10 @@ export default function MovieRow({ title, endpoint, params }: Props) {
                 setLoading(true);
                 setError("");
 
-                const key = getApiKey().trim();
-                const isV4 = key.startsWith("eyJ");
-
-                const res = await tmdb.get<Resp>(endpoint, {
-                    params: isV4 ? { ...params, page: 1 } : { api_key: key, ...params, page: 1 },
-                    headers: isV4 ? { Authorization: `Bearer ${key}` } : undefined,
-                });
-
-                if (alive) setMovies(res.data.results ?? []);
-            } catch (e: any) {
-                if (alive) setError(e?.message ?? "요청 실패");
+                const data = await getMovieList(kind);
+                if (alive) setMovies(data.results ?? []);
+            } catch (e) {
+                if (alive) setError(getApiErrorMessage(e, "영화 목록 요청 실패"));
             } finally {
                 if (alive) setLoading(false);
             }
@@ -52,7 +45,7 @@ export default function MovieRow({ title, endpoint, params }: Props) {
         return () => {
             alive = false;
         };
-    }, [endpoint, params]);
+    }, [kind]);
 
     return (
         <section style={{ padding: "18px 0" }}>
@@ -70,16 +63,13 @@ export default function MovieRow({ title, endpoint, params }: Props) {
                 }}
             >
                 {movies.map((m) => {
-                    const img = posterUrl(m.poster_path);
+                    const img = posterUrl(m);
                     const wished = wishIds.includes(m.id);
 
                     return (
                         <div
                             key={m.id}
-                            onClick={() => {
-                                const next = toggleWish({ id: m.id, title: m.title, poster_path: m.poster_path });
-                                setWishIds(next.map((x) => x.id));
-                            }}
+                            onClick={() => setSelectedMovieId(m.id)}
                             style={{
                                 minWidth: 140,
                                 cursor: "pointer",
@@ -92,6 +82,11 @@ export default function MovieRow({ title, endpoint, params }: Props) {
                         >
                             {/* ★ 표시 */}
                             <div
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    const next = toggleWish({ id: m.id, title: m.title, poster_path: m.poster_path });
+                                    setWishIds(next.map((x) => x.id));
+                                }}
                                 style={{
                                     position: "absolute",
                                     top: 6,
@@ -118,6 +113,7 @@ export default function MovieRow({ title, endpoint, params }: Props) {
                     );
                 })}
             </div>
+            <MovieDetailModal movieId={selectedMovieId} onClose={() => setSelectedMovieId(null)} />
         </section>
     );
 }
