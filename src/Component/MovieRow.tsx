@@ -55,11 +55,12 @@ export default function MovieRow({ title, kind }: Props) {
             {error && <div style={{ color: "salmon" }}>Error: {error}</div>}
 
             <div
+                className="movieRowScroller"
                 style={{
                     display: "flex",
                     gap: 10,
                     overflowX: "auto",
-                    paddingBottom: 8,
+                    padding: "2px 2px 12px",
                 }}
             >
                 {movies.map((m) => {

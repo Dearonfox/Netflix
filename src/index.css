@@ -11,3 +11,27 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.movieRowScroller {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 9, 20, 0.75) rgba(255, 255, 255, 0.08);
+}
+
+.movieRowScroller::-webkit-scrollbar {
+  height: 8px;
+}
+
+.movieRowScroller::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.movieRowScroller::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #e50914, #8b0008);
+  border-radius: 999px;
+  border: 2px solid #111;
+}
+
+.movieRowScroller::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #ff2633, #b20710);
+}
