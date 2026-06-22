@@ -30,7 +30,7 @@ jobs:
       - run: npm run build
         env:
           CI: false
-          REACT_APP_TMDB_API_KEY: ${{ secrets.REACT_APP_TMDB_API_KEY }}
+          REACT_APP_API_BASE_URL: ${{ vars.REACT_APP_API_BASE_URL }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
